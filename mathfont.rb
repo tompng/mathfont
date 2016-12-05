@@ -24,7 +24,7 @@ module Font
     end
     def value x, y
       scale = 1.2
-      @defs.call(scale*x, scale*y, Math.atan2(y, x), scale*Math.sqrt(x*x+y*y))
+      @defs.call(scale*x, scale*y, scale*Math.sqrt(x*x+y*y), Math.atan2(y, x))
     end
     def include? x, y
       value(x, y) > 0
@@ -38,14 +38,14 @@ module Font
     register('!'){|x,y|(1/32.0-x**2-(y+3/4.0)**2)*(4*x**2+(y-1/3.0)**6-1/8.0)}
     register('"'){|x,y|1-(16*x**4+1/64.0/x**2-1/4.0)*16**(1-y)-(4*y-3)**2}
     register('#'){|x,y|1/4.0-(((3*x-y/2)**2+4*y**2)/5)**8-(Math.cos(6*x-y)*Math.cos(4*y))**2}
-    register('$'){|x,y,th,r|1/4.0-(32*(r*Math.cos(th+8*r-4*r**2-7/2.0))**2+(r*Math.sin(th+8*r-4*r**2-7/2.0))**4-1/2.0)*(32*x**2+4*y**2*(y**2-1/2.0)**4-1/32.0)}
+    register('$'){|x,y,r,th|1/4.0-(32*(r*Math.cos(th+8*r-4*r**2-7/2.0))**2+(r*Math.sin(th+8*r-4*r**2-7/2.0))**4-1/2.0)*(32*x**2+4*y**2*(y**2-1/2.0)**4-1/32.0)}
     register('%'){|x,y|(((6*x+2)**2+(6*y-3)**2-2)**2-2)*(((6*x-2)**2+(6*y+3)**2-2)**2-2)*(3-(12*x-8*y)**2-(y+3*x/4)**8)}
     register('&'){|x,y|1-13/(16+100*y**2)-1/80.0/((x+1/16.0)**2+(y-7/16.0)**2)-1/(30*(x-(5*y+1)/15)**2+50*(y+2/5.0)**2)-3*(x+(1-y)/8)**2*Math.exp(y/2)-2*y**4+2/(1+10*(x-y-1)**4+80*(x+y)**2)+2/(1+80*(x-y-3/4.0)**2+10*(y+x-3/4.0)**4)}
     register("'"){|x,y|1-24*x**2*8**(1-y)-(4*y-3)**2}
     register('('){|x,y|1-(8*x-4*y**2+2)**2-y**16}
     register(')'){|x,y|1-(8*x+4*y**2-2)**2-y**16}
-    register('*'){|x,y,th,r|3-Math.cos(6*th)-6*r}
-    register('+'){|x,y,th,r|2+Math.cos(4*th)+Math.cos(8*th)/6-5*r}
+    register('*'){|x,y,r,th|3-Math.cos(6*th)-6*r}
+    register('+'){|x,y,r,th|2+Math.cos(4*th)+Math.cos(8*th)/6-5*r}
     register(','){|x,y|1/32.0-x**2-(y+3/4.0)**2-128*x*y/(1+(128*x)**2+(64*y+72)**2)}
     register('-'){|x,y|1-6*x**4-40*y**2}
     register('.'){|x,y|1/32.0-x**2-(y+3/4.0)**2}
@@ -83,11 +83,11 @@ module Font
 
     register(:a){|x,y|1/2.0+32/(1+512*(x**4+(y+1/4.0)**2))-x**6-(3/2.0-2*y-8*x**2+5*x**4)**2}
     register(:b){|x,y|2-1/(Math.cos(4*y)**2+16*x**4)-8*(x-(Math.sqrt(16/16-Math.cos(7*y))-1)/5/(1+Math.exp(-8*x)))**4-y**4}
-    register(:c){|x,y,th|1/2.0-((1+Math.cos(th))/2)**16-(4*x**2+3*y**2-2)**2}
+    register(:c){|x,y,r,th|1/2.0-((1+Math.cos(th))/2)**16-(4*x**2+3*y**2-2)**2}
     register(:d){|x,y|1/12.0-(y**2+(3*x/2+y**2/2+y**4/16)**2-3/4.0)**2}
     register(:e){|x,y|2-6*x**4-y**4-4*(1-Math.cos(4*y)**4)/(1+Math.exp(-16*x-8))}
     register(:f){|x,y|2-8*x**4-2*y**4+y**2-2*(1-Math.cos(y**2+3*y)**6)*(2-y)/(1+Math.exp(-16*x-6))}
-    register(:g){|x,y,th|1/2.0-((1+Math.cos(th))/2)**16+2/(1+4*(4*x-1)**8+2*(8*y+2)**4)-((2*x+1/(4+4*(2*x-1)**4+(4*y+1)**4))**2+3*y**2-2)**2}
+    register(:g){|x,y,r,th|1/2.0-((1+Math.cos(th))/2)**16+2/(1+4*(4*x-1)**8+2*(8*y+2)**4)-((2*x+1/(4+4*(2*x-1)**4+(4*y+1)**4))**2+3*y**2-2)**2}
     register(:h){|x,y|-5*(16*x**8+y**8-1)-9/((5*x/2)**16+2*(y**2-1)**4)}
     register(:i){|x,y|2-(8*x)**4-y**8}
     register(:j){|x,y|1/6.0-Math.exp(8*y-10/(1+Math.exp(-16*x)))-(3*x**2+6*(y/2-1/4.0)**4-1)**2}
@@ -104,8 +104,8 @@ module Font
     register(:u){|x,y|1/6.0-Math.exp(16*y-16)-(3*x**2+5*(y/2-1/4.0)**4-1)**2}
     register(:v){|x,y|1/2.0-x**6-(2*y+3/2.0-8*x**2+5*x**4)**2}
     register(:w){|x,y|1-x**8-(3*y-2*Math.cos(6*x)-3*x**2+2*x**4)**2}
-    register(:x){|x,y,th,r|3*Math.atan((2+Math.tan(2*th-Math.sin(2*th)/4)**2)/6)-4*r}
-    register(:y){|x,y,th,r|3*Math.atan((2+Math.tan(3*th/2+Math::PI/4-Math.cos(th)/2-Math.sin(2*th)/4)**2)/8)-4*r}
+    register(:x){|x,y,r,th|3*Math.atan((2+Math.tan(2*th-Math.sin(2*th)/4)**2)/6)-4*r}
+    register(:y){|x,y,r,th|3*Math.atan((2+Math.tan(3*th/2+Math::PI/4-Math.cos(th)/2-Math.sin(2*th)/4)**2)/8)-4*r}
     register(:z){|x,y|1/(4+128*(x-y)**2)-2*y**8+5*y**4/4-(x+y/8)**8-1/8.0}
   end
   def self.chars char, size
@@ -137,14 +137,12 @@ module Font
 end
 
 msg = ARGV[0] || "hello ruby "
-msg.chars.each{|c|
-  puts Font.chars(c, 46*2)
-}
-exit
+msg.chars.each{|c|puts Font.chars(c, 24)}
+sleep 1
 loop.with_index{|_,i|
   t = i/20.0%msg.size
   x = ->x{3*x*x-2*x*x*x}
-  lines = Font.mix_char msg[t.to_i], msg[(t.to_i+1)%msg.size], t%1, 48
+  lines = Font.mix_char msg[t.to_i], msg[(t.to_i+1)%msg.size], x[t%1], 48
   $><< "\e[1;1H"
   puts lines
   sleep 0.05
