@@ -4,10 +4,10 @@ module Font
     @faces[c.to_s.upcase] = @faces[c.to_s.downcase] = Face.new &block
   end
   def self.face c
-    @faces[c.to_s[0]] || none
+    @faces[c.to_s[0]] ||= none
   end
   def self.none
-    Face.new{-1}
+    @none ||= Face.new{-1}
   end
   def self.aa_table
     [
@@ -23,6 +23,14 @@ module Font
       @defs = defs
     end
     def value x, y
+      n = 128
+      ix, iy = [x,y].map { |v| [0,(n*(v+1)/2.0).round,n-1].sort[1] }
+      @values ||= (0...n).to_a.repeated_permutation(2).map do |ix, iy|
+        __value 2.0*ix/n-1, 2.0*iy/n-1
+      end
+      @values[n*ix+iy]
+    end
+    def __value x, y
       scale = 1.2
       @defs.call(scale*x, scale*y, scale*Math.sqrt(x*x+y*y), Math.atan2(y, x))
     end
@@ -70,6 +78,7 @@ module Font
     register('|'){|x,y|4-256*x**2-y**16}
     register('}'){|x,y|1-(8*x-2*y**2+3*y**4-3/(2+64*y**2))**2-y**16}
     register('~'){|x,y|1/32.0-x**8-(y+Math.sin(6*x)/8)**2}
+
     register(0){|x,y|1-(8*(x-y/8)**2+4*y**2-8/3.0)**2}
     register(1){|x,y|1-32*(x-y/8)**2-2*y**8}
     register(2){|x,y|1/32.0-Math.exp(-4*x-2*y-4)+1/(2*(x-1/8)**8+4*(4*y+3)**2)-((x+(1-y)/2)**2+y**2-1/2.0)**2}
@@ -136,14 +145,19 @@ module Font
   end
 end
 
+
+require 'io/console'
+h, w = ($>.winsize rescue [24, 80])
 msg = ARGV[0] || "hello ruby "
-msg.chars.each{|c|puts Font.chars(c, 24)}
+msg.chars.each{|c|puts Font.chars(c, h)}
 sleep 1
+$> << "\e[1;1H"
 loop.with_index{|_,i|
+  h, w = ($>.winsize rescue [24, 80])
   t = i/20.0%msg.size
   x = ->x{3*x*x-2*x*x*x}
-  lines = Font.mix_char msg[t.to_i], msg[(t.to_i+1)%msg.size], x[t%1], 48
-  $><< "\e[1;1H"
-  puts lines
+  lines = Font.mix_char msg[t.to_i], msg[(t.to_i+1)%msg.size], x[t%1], 2*h
+  print lines.map{|s|s[0,w]}.join("\n")
+  $> << "\e[1;1H"
   sleep 0.05
 }
