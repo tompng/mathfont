@@ -11,11 +11,11 @@ module Font
   end
   def self.aa_table
     [
-      %$MM#TT$,
-      %$Qd0V*$,
-      %$par<"$,
-      %$gu(:^$,
-      %$g,,. $
+      'MM#TT',
+      'Qd0V*',
+      'par<?',
+      'gu!:^',
+      'g,,. '
     ]
   end
   class Face
@@ -24,7 +24,7 @@ module Font
     end
     def value x, y
       n = 128
-      ix, iy = [x,y].map { |v| [0,(n*(v+1)/2.0).round,n-1].sort[1] }
+      ix, iy = [x,y].map { |v| i = (n*(v+1)/2.0).round; i < 0 ? 0 : i >= n ? n-1 : i }
       @values ||= (0...n).to_a.repeated_permutation(2).map do |ix, iy|
         __value 2.0*ix/n-1, 2.0*iy/n-1
       end
