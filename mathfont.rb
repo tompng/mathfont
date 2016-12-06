@@ -148,10 +148,16 @@ end
 
 require 'io/console'
 def banner msg, size: nil
-  h, w = ($>.winsize rescue [24, 80])
-  cw = size || [(w-1)/4, 12].max
-  lsize = [(w-1)/cw, 1].max
-  lines = msg.lines.map{|l|l.chomp.chars.each_slice(lsize).map(&:join)}.flatten
+  h, w = $>.winsize rescue nil
+  cw = size || (!w ? 12 : [(w-1)/4, 12].max)
+  if w
+    cw = size || [(w-1)/4, 12].max
+    lsize = [(w-1)/cw, 1].max
+    lines = msg.lines.map{|l|l.chomp.chars.each_slice(lsize).map(&:join)}.flatten
+  else
+    cw = size || 12
+    lines = msg.lines
+  end
   @cache = {}
   lines.each do |l|
     clines = l.chars.map{|c|(@cache[c]||=Font.chars(c, cw+cw/6)).map{|l|l[cw/12,cw]}}.transpose.map(&:join)
@@ -159,7 +165,7 @@ def banner msg, size: nil
   end
 end
 
-def animate msg
+def animate msg, size: nil
   msg = "#{msg} "
   move = ->{$> << "\e[1;1H"}
   clear = ->{$> << "\e[J"}
@@ -169,32 +175,57 @@ def animate msg
     h, w = ($>.winsize rescue [24, 80])
     t = i/20.0%msg.size
     x = ->x{3*x*x-2*x*x*x}
-    lines = Font.mix_char msg[t.to_i], msg[(t.to_i+1)%msg.size], x[t%1], 2*h
+    lines = Font.mix_char msg[t.to_i], msg[(t.to_i+1)%msg.size], x[t%1], (size||h*2)
     clear.call
     move.call
-    print lines.map{|s|s[0,w]}.join("\n")
+    print lines.map{|s|s[0,w]}[0,h].join("\n")
     move.call
     sleep 0.05
   }
 end
 
-if ARGV.empty?
-  $> << "message> "
-  banner $<.gets
-elsif ARGV[0] == '-h'
-  puts %(
-    \e[1m-h\e[m : help
-    \e[1m-a message\e[m : animate
-    \e[1m-b message\e[m : banner
-    \e[1m-b16 message\e[m : banner(fontsize=16(any number))
-  )
-elsif ARGV[0] == '-a'
-  animate ARGV.drop(1).join(' ')
-elsif ARGV[0] == '-b'
-  p ARGV.drop(1).join(' ')
-  banner ARGV.drop(1).join(' ')
-elsif ARGV[0][0,2] == '-b'
-  banner ARGV.drop(1).join(' '), size: ARGV[0][2..-1].to_i
+
+options = {}
+commands = {
+  h: {name: :help, run: ->{help commands}},
+  a: {name: :animate, run: ->{options[:animate] = true}},
+  s: {name: :size, run: ->(s){options[:size] = s.to_i}}
+}
+def help commands
+  puts "\e[1mruby #{__FILE__} [options] message\m"
+  commands.each do |type, cmd|
+    puts "\t\e[1m-#{[type, *cmd[:run].arity.times.map{'*'}].join ' '}\t\e[m #{cmd[:name]}"
+  end
+  exit
+end
+
+args = ARGV.dup
+loop do
+  a = args.first
+  break unless /^--?(?<cmd>[a-z]+)$/ =~ a
+  args.shift
+  break if cmd == ''
+  command = commands[cmd.to_sym] || commands.find{|k,v|v[:name].to_s==cmd}&.last
+  raise "unknown option #{a}" unless command
+  block = command[:run]
+  block.call *block.arity.times.map{args.shift}
+end
+msg = args.join ' ' unless args.empty?
+
+if options[:animate]
+  unless msg
+    $> << "message> "
+    msg = STDIN.gets
+  end
+  animate msg, size: options[:size]
 else
-  banner ARGV.join(' ')
+  if msg
+    banner msg, size: options[:size]
+  else
+    loop do
+      msg = STDIN.gets
+      break if msg.nil?
+      banner msg, size: options[:size]
+    end
+  end
 end
