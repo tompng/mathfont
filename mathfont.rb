@@ -202,7 +202,7 @@ end
 args = ARGV.dup
 loop do
   a = args.first
-  break unless /^--?(?<cmd>[a-z]+)$/ =~ a
+  break unless /^--?(?<cmd>[a-z]*)$/ =~ a
   args.shift
   break if cmd == ''
   command = commands[cmd.to_sym] || commands.find{|k,v|v[:name].to_s==cmd}&.last
